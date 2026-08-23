@@ -1,5 +1,5 @@
 -- =================================================================
--- AXIOM SYSTEM: NO-UI SILENT RUNNER WITH VALIDATOR2 (SPEED: 0.1s)
+-- AXIOM SYSTEM: NO-UI SILENT RUNNER WITH DYNAMIC VALIDATOR2 (0.1s)
 -- =================================================================
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,10 +13,10 @@ local LocalPlayer = Players.LocalPlayer
 -- HIỆN THÔNG BÁO BẬT SCRIPT THÀNH CÔNG
 pcall(function()
     StarterGui:SetCore("SendNotification", {
-        Title = "Axiom System",
-        Text = "Script đã bật! Tự ngắm target & Gửi Validator2.",
+        Title = "Nhat HiHi",
+        Text = "Script By Nhat HiHi",
         Duration = 5,
-        Icon = "rbxassetid://6023426926"
+        Icon = "rbxassetid://77399452392419"
     })
 end)
 
@@ -243,16 +243,14 @@ task.spawn(function()
     end
 end)
 
--- VÒNG LẶP GỬI REMOTE VALIDATOR2 (MÃ HÓA ĐỘNG GIỐNG FAST ATTACK)
+-- VÒNG LẶP GỬI REMOTE VALIDATOR2 (MÃ HÓA ĐỘNG - 0.1s)
 task.spawn(function()
     while true do
         pcall(function()
-            -- Gửi Validator2 mặc định
             if Validator2 then
                 Validator2:FireServer(15964719, 169)
             end
 
-            -- Gửi Validator2 qua Remote Mã Hóa Động
             if DynamicRemoteTarget and DynamicRemoteId and Net and Net:FindFirstChild("seed") then
                 local seed = Net.seed:InvokeServer()
                 local remoteCode = "Validator2"
@@ -262,16 +260,13 @@ task.spawn(function()
                     return string.char(bit32.bxor(string.byte(char), encryptionKey))
                 end)
 
-                local finalId = bit32.bxor(DynamicRemoteId + 909090, seed * 2)
+                local finalId = bit32.bxor(DynamicRemoteId + 90909090, seed * 3)
                 local cloneRemote = cloneref and cloneref(DynamicRemoteTarget) or DynamicRemoteTarget
-                
-                -- Gửi dữ liệu mã hóa kèm tham số (15964719, 169)
                 cloneRemote:FireServer(encodedString, finalId, 15964719, 169)
             end
         end)
-        task.wait(0.1) -- Đã chỉnh tốc độ về 0.1s cho đồng bộ với Fast Attack
+        task.wait(1.0)
     end
 end)
 
-print("[Axiom Systems] Validator2 Loop Restored & Active.")
-
+print("[Axiom Systems] Fully Integrated with Dynamic Validator2 (0.1s).")
