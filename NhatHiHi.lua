@@ -248,7 +248,7 @@ task.spawn(function()
     while true do
         pcall(function()
             if Validator2 then
-                Validator2:FireServer(15964719, 169)
+                Validator2:FireServer(5931199, 3)
             end
 
             if DynamicRemoteTarget and DynamicRemoteId and Net and Net:FindFirstChild("seed") then
@@ -262,7 +262,7 @@ task.spawn(function()
 
                 local finalId = bit32.bxor(DynamicRemoteId + 90909090, seed * 3)
                 local cloneRemote = cloneref and cloneref(DynamicRemoteTarget) or DynamicRemoteTarget
-                cloneRemote:FireServer(encodedString, finalId, 15964719, 169)
+                cloneRemote:FireServer(encodedString, finalId, 5931199, 3)
             end
         end)
         task.wait(1.0)
@@ -270,3 +270,4 @@ task.spawn(function()
 end)
 
 print("[Axiom Systems] Fully Integrated with Dynamic Validator2 (0.1s).")
+
