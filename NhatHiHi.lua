@@ -1,5 +1,5 @@
 -- =================================================================
--- AXIOM SYSTEM: NO-UI SILENT RUNNER WITH DYNAMIC VALIDATOR2 (0.1s)
+-- AXIOM SYSTEM: NO-UI SILENT RUNNER (TARGET: BOATS, HAUNTED & FISH CREW)
 -- =================================================================
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -23,9 +23,6 @@ end)
 -- 1. KHỞI TẠO VÀ QUÉT MÃ HÓA ĐỘNG
 local Modules = ReplicatedStorage:WaitForChild("Modules", 5)
 local Net = Modules and Modules:WaitForChild("Net", 5)
-local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
-local Validator2 = Remotes and Remotes:WaitForChild("Validator2", 5)
-
 local Enemies = Workspace:WaitForChild("Enemies", 5)
 local Characters = Workspace:WaitForChild("Characters", 5)
 
@@ -62,7 +59,7 @@ end
 
 InitializeHitRegistration()
 
--- 2. MỤC TIÊU BẮN SÚNG (FISHBOAT, PIRATE BRIGADE, HAUNTED & FISH CREW)
+-- 2. MỤC TIÊU BẮN SÚNG (BỔ SUNG: FISH CREW MEMBER & FISHBOAT/PIRATE BRIGADE/HAUNTED CREW)
 local function GetGunTarget()
     local myChar = LocalPlayer.Character
     local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
@@ -72,7 +69,7 @@ local function GetGunTarget()
     local closestPos = nil
     local minDist = 1500
 
-    -- [DANH SÁCH 1] QUÉT THUYỀN BIỂN VÀ SỰ KIỆN TỪ WORKSPACE.ENEMIES
+    -- [DANH SÁCH 1] QUÉT THUYỀN BIỂN, HAUNTED CREW & FISH CREW MEMBER TỪ WORKSPACE.ENEMIES
     if Enemies then
         for _, enemy in pairs(Enemies:GetChildren()) do
             -- Kiểm tra Thuyền (FishBoat, PirateBrigade, PirateGrandBrigade)
@@ -195,7 +192,7 @@ local function ExecuteFastAttack()
     end
 end
 
--- 5. BẮN SÚNG MÃ HÓA (GUN ONLY) - TỐC ĐỘ 0.1s
+-- 5. BẮN SÚNG MÃ HÓA (GUN ONLY) - TỐC ĐỘ 1/999999
 local function ExecuteEncryptedGun()
     local character = LocalPlayer.Character
     if not character then return end
@@ -239,35 +236,8 @@ end)
 task.spawn(function()
     while true do
         pcall(ExecuteEncryptedGun)
-        task.wait(0)
+        task.wait(1/999999)
     end
 end)
 
--- VÒNG LẶP GỬI REMOTE VALIDATOR2 (MÃ HÓA ĐỘNG - 0.1s)
-task.spawn(function()
-    while true do
-        pcall(function()
-            if Validator2 then
-                Validator2:FireServer(5931199, 3)
-            end
-
-            if DynamicRemoteTarget and DynamicRemoteId and Net and Net:FindFirstChild("seed") then
-                local seed = Net.seed:InvokeServer()
-                local remoteCode = "Validator2"
-                local encryptionKey = math.floor(Workspace:GetServerTimeNow() / 10 % 10) + 1
-                
-                local encodedString = string.gsub(remoteCode, ".", function(char)
-                    return string.char(bit32.bxor(string.byte(char), encryptionKey))
-                end)
-
-                local finalId = bit32.bxor(DynamicRemoteId + 90909090, seed * 3)
-                local cloneRemote = cloneref and cloneref(DynamicRemoteTarget) or DynamicRemoteTarget
-                cloneRemote:FireServer(encodedString, finalId, 5931199, 3)
-            end
-        end)
-        task.wait(1.0)
-    end
-end)
-
-print("[Axiom Systems] Fully Integrated with Dynamic Validator2 (0.1s).")
-
+print("[Axiom Systems] Added Fish Crew Member to Targets.")
