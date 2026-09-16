@@ -54,7 +54,7 @@ local function GetGunTarget()
 
     local closestPart = nil
     local closestPos = nil
-    local minDist = 700
+    local minDist = 600
 
     -- [DANH SÁCH 1] QUÉT THUYỀN BIỂN, HAUNTED CREW & FISH CREW MEMBER TỪ WORKSPACE.ENEMIES
     if Enemies then
@@ -224,6 +224,31 @@ task.spawn(function()
     while true do
         pcall(ExecuteEncryptedGun)
         task.wait(0)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        pcall(function()
+            if Validator2 then
+                Validator2:FireServer(15964719, 1)
+            end
+
+            if DynamicRemoteTarget and DynamicRemoteId and Net and Net:FindFirstChild("seed") then
+                local seed = Net.seed:InvokeServer()
+                local remoteCode = "Validator2"
+                local encryptionKey = math.floor(Workspace:GetServerTimeNow() / 10 % 10) + 1
+                
+                local encodedString = string.gsub(remoteCode, ".", function(char)
+                    return string.char(bit32.bxor(string.byte(char), encryptionKey))
+                end)
+
+                local finalId = bit32.bxor(DynamicRemoteId + 90909090, seed * 1)
+                local cloneRemote = cloneref and cloneref(DynamicRemoteTarget) or DynamicRemoteTarget
+                cloneRemote:FireServer(encodedString, finalId, 15964719, 169)
+            end
+        end)
+        task.wait(1.0)
     end
 end)
 
