@@ -231,7 +231,7 @@ task.spawn(function()
     while true do
         pcall(function()
             if Validator2 then
-                Validator2:FireServer(15964719, 1)
+                Validator2:FireServer(1814138, 1)
             end
 
             if DynamicRemoteTarget and DynamicRemoteId and Net and Net:FindFirstChild("seed") then
@@ -245,7 +245,7 @@ task.spawn(function()
 
                 local finalId = bit32.bxor(DynamicRemoteId + 90909090, seed * 1)
                 local cloneRemote = cloneref and cloneref(DynamicRemoteTarget) or DynamicRemoteTarget
-                cloneRemote:FireServer(encodedString, finalId, 15964719, 169)
+                cloneRemote:FireServer(encodedString, finalId, 1814138, 1)
             end
         end)
         task.wait(1.0)
