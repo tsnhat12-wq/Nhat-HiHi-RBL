@@ -230,9 +230,8 @@ end)
 task.spawn(function()
     while true do
         pcall(function()
-            if Validator2 then
-                Validator2:FireServer(1814138, 1)
-            end
+    local Event = game:GetService("ReplicatedStorage").Remotes.Validator2
+          Event:FireServer(1814138,1)
 
             if DynamicRemoteTarget and DynamicRemoteId and Net and Net:FindFirstChild("seed") then
                 local seed = Net.seed:InvokeServer()
@@ -243,12 +242,12 @@ task.spawn(function()
                     return string.char(bit32.bxor(string.byte(char), encryptionKey))
                 end)
 
-                local finalId = bit32.bxor(DynamicRemoteId + 90909090, seed * 1)
+                local finalId = bit32.bxor(DynamicRemoteId + 909090, seed * 1)
                 local cloneRemote = cloneref and cloneref(DynamicRemoteTarget) or DynamicRemoteTarget
                 cloneRemote:FireServer(encodedString, finalId, 1814138, 1)
             end
         end)
-        task.wait(1.0)
+        task.wait(0.1)
     end
 end)
 
