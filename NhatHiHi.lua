@@ -230,9 +230,10 @@ end)
 task.spawn(function()
     while true do
         pcall(function()
-    local Event = game:GetService("ReplicatedStorage").Remotes.Validator2
-          Event:FireServer(1814138,1)
-
+            if Validator2 then
+                Validator2:FireServer(1814138, 1)
+                    end
+                    
             if DynamicRemoteTarget and DynamicRemoteId and Net and Net:FindFirstChild("seed") then
                 local seed = Net.seed:InvokeServer()
                 local remoteCode = "Validator2"
