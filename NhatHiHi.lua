@@ -496,16 +496,6 @@ pcall(function() setfpscap(30) end)
 
 local LocalPlayer = Players.LocalPlayer
 
--- HIỆN THÔNG BÁO BẬT SCRIPT THÀNH CÔNG
-pcall(function()
-    StarterGui:SetCore("SendNotification", {
-        Title = "Nhat HiHi",
-        Text = "Script By Nhat HiHi",
-        Duration = 5,
-        Icon = "rbxassetid://77399452392419"
-    })
-end)
-
 -- 1. KHỞI TẠO VÀ QUÉT MÃ HÓA ĐỘNG
 local Modules = ReplicatedStorage:WaitForChild("Modules", 5)
 local Net = Modules and Modules:WaitForChild("Net", 5)
