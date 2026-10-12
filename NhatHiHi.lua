@@ -717,3 +717,87 @@ task.spawn(function()
 end)
 
 print("[Axiom Systems] Added Fish Crew Member to Targets.")
+
+local PLAYERS = game:GetService("Players")
+local localPlayer = PLAYERS.LocalPlayer
+
+-- Hàm kiểm tra xem Tool có phải là Trái Quỷ (Blox Fruit) không
+local function isFruit(tool)
+	if not tool or not tool:IsA("Tool") then return false end
+	
+	-- 1. Kiểm tra thuộc tính ToolTip chuẩn của Blox Fruits (thường là "Blox Fruit")
+	if tool.ToolTip == "Blox Fruit" then
+		return true
+	end
+	
+	-- 2. Kiểm tra Attribute WeaponType nếu game có set
+	local weaponType = tool:GetAttribute("WeaponType") or tool:FindFirstChild("WeaponType")
+	if weaponType then
+		if typeof(weaponType) == "Instance" and weaponType:IsA("StringValue") then
+			weaponType = weaponType.Value
+		end
+		if tostring(weaponType):lower():find("fruit") then
+			return true
+		end
+	end
+	
+	return false
+end
+
+-- Hàm tìm mục tiêu gần nhất trong phạm vi maxDistance
+local function getNearestTarget(maxDistance)
+	local character = localPlayer.Character
+	if not character or not character:FindFirstChild("HumanoidRootPart") then return nil end
+	
+	local myPos = character.HumanoidRootPart.Position
+	local nearestTarget = nil
+	local shortestDistance = maxDistance
+
+	-- Quét tất cả Humanoid trong Workspace (Quái, NPC, Player khác)
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("Humanoid") and obj.Parent ~= character and obj.Health > 0 then
+			local targetRoot = obj.Parent:FindFirstChild("HumanoidRootPart") or obj.Parent:FindFirstChild("PrimaryPart")
+			if targetRoot then
+				local dist = (targetRoot.Position - myPos).Magnitude
+				if dist <= shortestDistance then
+					shortestDistance = dist
+					nearestTarget = targetRoot
+				end
+			end
+		end
+	end
+
+	return nearestTarget
+end
+
+-- Vòng lặp kiểm tra và gửi Remote
+task.spawn(function()
+	while task.wait(0.1) do
+		local character = localPlayer.Character
+		if character and character:FindFirstChild("HumanoidRootPart") then
+			local currentTool = character:FindFirstChildOfClass("Tool")
+			
+			-- CHỈ CHẠY NẾU MÓN ĐỒ ĐANG CẦM LA TRÁI QUỶ
+			if currentTool and isFruit(currentTool) then
+				local remote = currentTool:FindFirstChild("LeftClickRemote", true)
+				
+				if remote then
+					local targetPart = getNearestTarget(30)
+					
+					-- Chỉ gửi khi có mục tiêu trong 30 stud
+					if targetPart then
+						local myRoot = character.HumanoidRootPart
+						local direction = (targetPart.Position - myRoot.Position).Unit
+						
+						local args = {
+							direction,
+							1
+						}
+						remote:FireServer(unpack(args))
+					end
+				end
+			end
+		end
+	end
+end)
+
