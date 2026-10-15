@@ -718,86 +718,83 @@ end)
 
 print("[Axiom Systems] Added Fish Crew Member to Targets.")
 
-local PLAYERS = game:GetService("Players")
-local localPlayer = PLAYERS.LocalPlayer
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local backpack = player:WaitForChild("Backpack")
 
--- Hàm kiểm tra xem Tool có phải là Trái Quỷ (Blox Fruit) không
-local function isFruit(tool)
-	if not tool or not tool:IsA("Tool") then return false end
-	
-	-- 1. Kiểm tra thuộc tính ToolTip chuẩn của Blox Fruits (thường là "Blox Fruit")
-	if tool.ToolTip == "Blox Fruit" then
-		return true
-	end
-	
-	-- 2. Kiểm tra Attribute WeaponType nếu game có set
-	local weaponType = tool:GetAttribute("WeaponType") or tool:FindFirstChild("WeaponType")
-	if weaponType then
-		if typeof(weaponType) == "Instance" and weaponType:IsA("StringValue") then
-			weaponType = weaponType.Value
-		end
-		if tostring(weaponType):lower():find("fruit") then
-			return true
-		end
-	end
-	
-	return false
+-- Hàm tìm vị trí mục tiêu gần nhất hoặc lấy điểm trước mặt nếu không có ai
+local function getTargetPosition()
+    local character = player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then return nil end
+    
+    local hrp = character.HumanoidRootPart
+    local myPos = hrp.Position
+    local nearestDist = math.huge
+    local nearestPos = nil
+    
+    -- Duyệt qua workspace để tìm các model có Humanoid
+    for _, obj in ipairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and obj ~= character then
+            local humanoid = obj:FindFirstChildOfClass("Humanoid")
+            local targetHrp = obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Torso")
+            
+            if humanoid and targetHrp and humanoid.Health > 0 then
+                local dist = (myPos - targetHrp.Position).Magnitude
+                if dist < nearestDist then
+                    nearestDist = dist
+                    nearestPos = targetHrp.Position
+                end
+            end
+        end
+    end
+    
+    -- Nếu có quái/người chơi thì trả về vị trí của họ
+    if nearestPos then
+        return nearestPos
+    else
+        -- Nếu KHÔNG CÓ ai, tính vị trí cách mặt nhân vật 10 studs về phía trước
+        local lookVector = hrp.CFrame.LookVector
+        local forwardPos = myPos + (lookVector * 10)
+        return forwardPos
+    end
 end
 
--- Hàm tìm mục tiêu gần nhất trong phạm vi maxDistance
-local function getNearestTarget(maxDistance)
-	local character = localPlayer.Character
-	if not character or not character:FindFirstChild("HumanoidRootPart") then return nil end
-	
-	local myPos = character.HumanoidRootPart.Position
-	local nearestTarget = nil
-	local shortestDistance = maxDistance
-
-	-- Quét tất cả Humanoid trong Workspace (Quái, NPC, Player khác)
-	for _, obj in ipairs(workspace:GetDescendants()) do
-		if obj:IsA("Humanoid") and obj.Parent ~= character and obj.Health > 0 then
-			local targetRoot = obj.Parent:FindFirstChild("HumanoidRootPart") or obj.Parent:FindFirstChild("PrimaryPart")
-			if targetRoot then
-				local dist = (targetRoot.Position - myPos).Magnitude
-				if dist <= shortestDistance then
-					shortestDistance = dist
-					nearestTarget = targetRoot
-				end
-			end
-		end
-	end
-
-	return nearestTarget
-end
-
--- Vòng lặp kiểm tra và gửi Remote
+-- Chạy vòng lặp gửi remote mỗi 0.15 giây
 task.spawn(function()
-	while task.wait(0.1) do
-		local character = localPlayer.Character
-		if character and character:FindFirstChild("HumanoidRootPart") then
-			local currentTool = character:FindFirstChildOfClass("Tool")
-			
-			-- CHỈ CHẠY NẾU MÓN ĐỒ ĐANG CẦM LA TRÁI QUỶ
-			if currentTool and isFruit(currentTool) then
-				local remote = currentTool:FindFirstChild("LeftClickRemote", true)
-				
-				if remote then
-					local targetPart = getNearestTarget(30)
-					
-					-- Chỉ gửi khi có mục tiêu trong 30 stud
-					if targetPart then
-						local myRoot = character.HumanoidRootPart
-						local direction = (targetPart.Position - myRoot.Position).Unit
-						
-						local args = {
-							direction,
-							1
-						}
-						remote:FireServer(unpack(args))
-					end
-				end
-			end
-		end
-	end
+    while true do
+        pcall(function()
+            local character = player.Character
+            if character then
+                local foundRemote = nil
+                
+                -- 1. Tìm trong nhân vật (đang cầm hoặc trang bị)
+                for _, item in ipairs(character:GetChildren()) do
+                    if item:IsA("Tool") and item:FindFirstChild("LeftClickRemote") then
+                        foundRemote = item:FindFirstChild("LeftClickRemote")
+                        break
+                    end
+                end
+                
+                -- 2. Nếu không thấy trên người, tìm trong Backpack
+                if not foundRemote then
+                    for _, item in ipairs(backpack:GetChildren()) do
+                        if item:IsA("Tool") and item:FindFirstChild("LeftClickRemote") then
+                            foundRemote = item:FindFirstChild("LeftClickRemote")
+                            break
+                        end
+                    end
+                end
+                
+                -- Gửi remote nếu tìm thấy tool phù hợp
+                if foundRemote then
+                    local targetPos = getTargetPosition()
+                    if targetPos then
+                        local args = {vector.create(targetPos.X, targetPos.Y, targetPos.Z),4}
+                        foundRemote:FireServer(unpack(args))
+                    end
+                end
+            end
+        end)
+        task.wait(0.1)
+    end
 end)
-
