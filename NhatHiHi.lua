@@ -182,27 +182,11 @@ local function ExecuteEncryptedGun()
     local targetPos, targetPart = GetGunTarget()
     if not targetPos or not targetPart then return end
 
-    -- Vòng lặp gửi remote RE/ShootGunEvent 3 lần liên tiếp
+    -- Vòng lặp gửi remote RE/ShootGunEvent 3 lần liên tiếp (Đã bỏ phần seed/mã hóa)
     for i = 1, 3 do
         local shootGunEvent = Net and Net:FindFirstChild("RE/ShootGunEvent")
         if shootGunEvent then
             shootGunEvent:FireServer(targetPos, { targetPart })
-        end
-
-        if DynamicRemoteTarget and DynamicRemoteId and Net and Net:FindFirstChild("seed") then
-            pcall(function()
-                local seed = Net.seed:InvokeServer()
-                local remoteCode = "RE/ShootGunEvent"
-                local encryptionKey = math.floor(Workspace:GetServerTimeNow() / 1 % 1) + 1
-                
-                local encodedString = string.gsub(remoteCode, ".", function(char)
-                    return string.char(bit32.bxor(string.byte(char), encryptionKey))
-                end)
-
-                local finalId = bit32.bxor(DynamicRemoteId + 909090, seed * 2)
-                local cloneRemote = cloneref and cloneref(DynamicRemoteTarget) or DynamicRemoteTarget
-                cloneRemote:FireServer(encodedString, finalId, targetPos, { targetPart })
-            end)
         end
     end
 end
