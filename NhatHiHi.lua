@@ -210,7 +210,7 @@ end
 task.spawn(function()
     while true do
         pcall(ExecuteFastAttack)
-        task.wait(0.1)
+        task.wait(0.01)
     end
 end)
 
@@ -226,47 +226,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local StarterGui = game:GetService("StarterGui")
 
-pcall(function() setfpscap(40) end)
-
 local LocalPlayer = Players.LocalPlayer
 
 local Modules = ReplicatedStorage:WaitForChild("Modules", 5)
 local Net = Modules and Modules:WaitForChild("Net", 5)
 local Enemies = Workspace:WaitForChild("Enemies", 5)
 local Characters = Workspace:WaitForChild("Characters", 5)
-
-local DynamicRemoteTarget = nil
-local DynamicRemoteId = nil
-
-local function InitializeHitRegistration()
-    local foldersToCheck = {
-        ReplicatedStorage:FindFirstChild("Util"),
-        ReplicatedStorage:FindFirstChild("Common"),
-        ReplicatedStorage:FindFirstChild("Remotes"),
-        ReplicatedStorage:FindFirstChild("Assets"),
-        ReplicatedStorage:FindFirstChild("FX")
-    }
-
-    for _, folder in ipairs(foldersToCheck) do
-        if folder then
-            for _, child in ipairs(folder:GetChildren()) do
-                if child:IsA("RemoteEvent") and child:GetAttribute("Id") then
-                    DynamicRemoteTarget = child
-                    DynamicRemoteId = child:GetAttribute("Id")
-                end
-            end
-
-            folder.ChildAdded:Connect(function(child)
-                if child:IsA("RemoteEvent") and child:GetAttribute("Id") then
-                    DynamicRemoteTarget = child
-                    DynamicRemoteId = child:GetAttribute("Id")
-                end
-            end)
-        end
-    end
-end
-
-InitializeHitRegistration()
 
 local function GetGunTarget()
     local myChar = LocalPlayer.Character
@@ -332,69 +297,6 @@ local function GetGunTarget()
     return closestPos, closestPart
 end
 
-local function GetMeleeTargets(character)
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return {} end
-    
-    local hitTargets = {}
-    local function ScanFolder(folder)
-        if not folder then return end
-        for _, target in ipairs(folder:GetChildren()) do
-            local humanoid = target:FindFirstChild("Humanoid")
-            local targetHrp = target:FindFirstChild("HumanoidRootPart")
-            if humanoid and targetHrp and humanoid.Health > 0 and target ~= character then
-                if (targetHrp.Position - hrp.Position).Magnitude <= 100 then
-                    for _, child in ipairs(target:GetChildren()) do
-                        if child:IsA("BasePart") then
-                            table.insert(hitTargets, {target, child})
-                        end
-                    end
-                end
-            end
-        end
-    end
-    
-    ScanFolder(Enemies)
-    ScanFolder(Characters)
-    return hitTargets
-end
-
-local function ExecuteFastAttack()
-    local character = LocalPlayer.Character
-    if not character then return end
-
-    local tool = character:FindFirstChildOfClass("Tool")
-    if not tool then return end
-    
-    local weaponType = tool:GetAttribute("WeaponType")
-    if weaponType ~= "Melee" and weaponType ~= "Sword" then return end
-
-    local hitTargets = GetMeleeTargets(character)
-    if #hitTargets == 0 then return end
-
-    if Net and Net:FindFirstChild("RE/RegisterAttack") and Net:FindFirstChild("RE/RegisterHit") then
-        Net["RE/RegisterAttack"]:FireServer()
-        local targetHead = hitTargets[1][1]:FindFirstChild("Head") or hitTargets[1][2]
-        Net["RE/RegisterHit"]:FireServer(targetHead, hitTargets, {})
-
-        if DynamicRemoteTarget and DynamicRemoteId and Net:FindFirstChild("seed") then
-            pcall(function()
-                local seed = Net.seed:InvokeServer()
-                local remoteCode = "RE/RegisterHit"
-                local encryptionKey = math.floor(Workspace:GetServerTimeNow() / 10 % 10) + 2
-                
-                local encodedString = string.gsub(remoteCode, ".", function(char)
-                    return string.char(bit32.bxor(string.byte(char), encryptionKey))
-                end)
-
-                local finalId = bit32.bxor(DynamicRemoteId + 909090, seed * 2)
-                local cloneRemote = cloneref and cloneref(DynamicRemoteTarget) or DynamicRemoteTarget
-                cloneRemote:FireServer(encodedString, finalId, targetHead, hitTargets)
-            end)
-        end
-    end
-end
-
 local function ExecuteEncryptedGun()
     local character = LocalPlayer.Character
     if not character then return end
@@ -405,37 +307,14 @@ local function ExecuteEncryptedGun()
     local targetPos, targetPart = GetGunTarget()
     if not targetPos or not targetPart then return end
 
-    -- Vòng lặp gửi remote RE/ShootGunEvent 3 lần liên tiếp
+    -- Gửi trực tiếp qua RE/ShootGunEvent 3 lần
     for i = 1, 3 do
         local shootGunEvent = Net and Net:FindFirstChild("RE/ShootGunEvent")
         if shootGunEvent then
             shootGunEvent:FireServer(targetPos, { targetPart })
         end
-
-        if DynamicRemoteTarget and DynamicRemoteId and Net and Net:FindFirstChild("seed") then
-            pcall(function()
-                local seed = Net.seed:InvokeServer()
-                local remoteCode = "RE/ShootGunEvent"
-                local encryptionKey = math.floor(Workspace:GetServerTimeNow() / 1 % 1) + 1
-                
-                local encodedString = string.gsub(remoteCode, ".", function(char)
-                    return string.char(bit32.bxor(string.byte(char), encryptionKey))
-                end)
-
-                local finalId = bit32.bxor(DynamicRemoteId + 909090, seed * 2)
-                local cloneRemote = cloneref and cloneref(DynamicRemoteTarget) or DynamicRemoteTarget
-                cloneRemote:FireServer(encodedString, finalId, targetPos, { targetPart })
-            end)
-        end
     end
 end
-
-task.spawn(function()
-    while true do
-        pcall(ExecuteFastAttack)
-        task.wait(0.1)
-    end
-end)
 
 task.spawn(function()
     while true do
@@ -449,47 +328,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local StarterGui = game:GetService("StarterGui")
 
-pcall(function() setfpscap(40) end)
-
 local LocalPlayer = Players.LocalPlayer
 
 local Modules = ReplicatedStorage:WaitForChild("Modules", 5)
 local Net = Modules and Modules:WaitForChild("Net", 5)
 local Enemies = Workspace:WaitForChild("Enemies", 5)
 local Characters = Workspace:WaitForChild("Characters", 5)
-
-local DynamicRemoteTarget = nil
-local DynamicRemoteId = nil
-
-local function InitializeHitRegistration()
-    local foldersToCheck = {
-        ReplicatedStorage:FindFirstChild("Util"),
-        ReplicatedStorage:FindFirstChild("Common"),
-        ReplicatedStorage:FindFirstChild("Remotes"),
-        ReplicatedStorage:FindFirstChild("Assets"),
-        ReplicatedStorage:FindFirstChild("FX")
-    }
-
-    for _, folder in ipairs(foldersToCheck) do
-        if folder then
-            for _, child in ipairs(folder:GetChildren()) do
-                if child:IsA("RemoteEvent") and child:GetAttribute("Id") then
-                    DynamicRemoteTarget = child
-                    DynamicRemoteId = child:GetAttribute("Id")
-                end
-            end
-
-            folder.ChildAdded:Connect(function(child)
-                if child:IsA("RemoteEvent") and child:GetAttribute("Id") then
-                    DynamicRemoteTarget = child
-                    DynamicRemoteId = child:GetAttribute("Id")
-                end
-            end)
-        end
-    end
-end
-
-InitializeHitRegistration()
 
 local function GetGunTarget()
     local myChar = LocalPlayer.Character
@@ -555,69 +399,6 @@ local function GetGunTarget()
     return closestPos, closestPart
 end
 
-local function GetMeleeTargets(character)
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return {} end
-    
-    local hitTargets = {}
-    local function ScanFolder(folder)
-        if not folder then return end
-        for _, target in ipairs(folder:GetChildren()) do
-            local humanoid = target:FindFirstChild("Humanoid")
-            local targetHrp = target:FindFirstChild("HumanoidRootPart")
-            if humanoid and targetHrp and humanoid.Health > 0 and target ~= character then
-                if (targetHrp.Position - hrp.Position).Magnitude <= 100 then
-                    for _, child in ipairs(target:GetChildren()) do
-                        if child:IsA("BasePart") then
-                            table.insert(hitTargets, {target, child})
-                        end
-                    end
-                end
-            end
-        end
-    end
-    
-    ScanFolder(Enemies)
-    ScanFolder(Characters)
-    return hitTargets
-end
-
-local function ExecuteFastAttack()
-    local character = LocalPlayer.Character
-    if not character then return end
-
-    local tool = character:FindFirstChildOfClass("Tool")
-    if not tool then return end
-    
-    local weaponType = tool:GetAttribute("WeaponType")
-    if weaponType ~= "Melee" and weaponType ~= "Sword" then return end
-
-    local hitTargets = GetMeleeTargets(character)
-    if #hitTargets == 0 then return end
-
-    if Net and Net:FindFirstChild("RE/RegisterAttack") and Net:FindFirstChild("RE/RegisterHit") then
-        Net["RE/RegisterAttack"]:FireServer()
-        local targetHead = hitTargets[1][1]:FindFirstChild("Head") or hitTargets[1][2]
-        Net["RE/RegisterHit"]:FireServer(targetHead, hitTargets, {})
-
-        if DynamicRemoteTarget and DynamicRemoteId and Net:FindFirstChild("seed") then
-            pcall(function()
-                local seed = Net.seed:InvokeServer()
-                local remoteCode = "RE/RegisterHit"
-                local encryptionKey = math.floor(Workspace:GetServerTimeNow() / 10 % 10) + 2
-                
-                local encodedString = string.gsub(remoteCode, ".", function(char)
-                    return string.char(bit32.bxor(string.byte(char), encryptionKey))
-                end)
-
-                local finalId = bit32.bxor(DynamicRemoteId + 909090, seed * 2)
-                local cloneRemote = cloneref and cloneref(DynamicRemoteTarget) or DynamicRemoteTarget
-                cloneRemote:FireServer(encodedString, finalId, targetHead, hitTargets)
-            end)
-        end
-    end
-end
-
 local function ExecuteEncryptedGun()
     local character = LocalPlayer.Character
     if not character then return end
@@ -628,37 +409,14 @@ local function ExecuteEncryptedGun()
     local targetPos, targetPart = GetGunTarget()
     if not targetPos or not targetPart then return end
 
-    -- Vòng lặp gửi remote RE/ShootGunEvent 3 lần liên tiếp
+    -- Gửi trực tiếp qua RE/ShootGunEvent 3 lần
     for i = 1, 3 do
         local shootGunEvent = Net and Net:FindFirstChild("RE/ShootGunEvent")
         if shootGunEvent then
             shootGunEvent:FireServer(targetPos, { targetPart })
         end
-
-        if DynamicRemoteTarget and DynamicRemoteId and Net and Net:FindFirstChild("seed") then
-            pcall(function()
-                local seed = Net.seed:InvokeServer()
-                local remoteCode = "RE/ShootGunEvent"
-                local encryptionKey = math.floor(Workspace:GetServerTimeNow() / 1 % 1) + 1
-                
-                local encodedString = string.gsub(remoteCode, ".", function(char)
-                    return string.char(bit32.bxor(string.byte(char), encryptionKey))
-                end)
-
-                local finalId = bit32.bxor(DynamicRemoteId + 909090, seed * 2)
-                local cloneRemote = cloneref and cloneref(DynamicRemoteTarget) or DynamicRemoteTarget
-                cloneRemote:FireServer(encodedString, finalId, targetPos, { targetPart })
-            end)
-        end
     end
 end
-
-task.spawn(function()
-    while true do
-        pcall(ExecuteFastAttack)
-        task.wait(0.1)
-    end
-end)
 
 task.spawn(function()
     while true do
