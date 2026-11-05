@@ -1,3 +1,4 @@
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -56,7 +57,7 @@ local function GetGunTarget()
 
     if Enemies then
         for _, enemy in pairs(Enemies:GetChildren()) do
-            -- Kiểm tra Thuyền (FishBoat, PirateBrigade, PirateGrandBrigade)
+
             if enemy:FindFirstChild("VehicleSeat") or enemy:FindFirstChild("Engine") then
                 local healthObj = enemy:FindFirstChild("Health")
                 local isAlive = not healthObj or (healthObj:IsA("ValueBase") and healthObj.Value > 0) or (healthObj:IsA("Humanoid") and healthObj.Health > 0)
@@ -178,11 +179,11 @@ local function ExecuteEncryptedGun()
 
     local tool = character:FindFirstChildOfClass("Tool")
     if not tool or tool:GetAttribute("WeaponType") ~= "Gun" then return end
+    if string.find(string.lower(tool.Name), "skull guitar", 1, true) then return end
 
     local targetPos, targetPart = GetGunTarget()
     if not targetPos or not targetPart then return end
 
-    -- Vòng lặp gửi remote RE/ShootGunEvent 3 lần liên tiếp (Đã bỏ phần seed/mã hóa)
     for i = 1, 3 do
         local shootGunEvent = Net and Net:FindFirstChild("RE/ShootGunEvent")
         if shootGunEvent then
@@ -228,7 +229,7 @@ local function GetGunTarget()
 
     if Enemies then
         for _, enemy in pairs(Enemies:GetChildren()) do
-            -- Kiểm tra Thuyền (FishBoat, PirateBrigade, PirateGrandBrigade)
+
             if enemy:FindFirstChild("VehicleSeat") or enemy:FindFirstChild("Engine") then
                 local healthObj = enemy:FindFirstChild("Health")
                 local isAlive = not healthObj or (healthObj:IsA("ValueBase") and healthObj.Value > 0) or (healthObj:IsA("Humanoid") and healthObj.Health > 0)
@@ -287,11 +288,11 @@ local function ExecuteEncryptedGun()
 
     local tool = character:FindFirstChildOfClass("Tool")
     if not tool or tool:GetAttribute("WeaponType") ~= "Gun" then return end
+    if string.find(string.lower(tool.Name), "skull guitar", 1, true) then return end
 
     local targetPos, targetPart = GetGunTarget()
     if not targetPos or not targetPart then return end
 
-    -- Gửi trực tiếp qua RE/ShootGunEvent 3 lần
     for i = 1, 3 do
         local shootGunEvent = Net and Net:FindFirstChild("RE/ShootGunEvent")
         if shootGunEvent then
@@ -330,7 +331,7 @@ local function GetGunTarget()
 
     if Enemies then
         for _, enemy in pairs(Enemies:GetChildren()) do
-            -- Kiểm tra Thuyền (FishBoat, PirateBrigade, PirateGrandBrigade)
+
             if enemy:FindFirstChild("VehicleSeat") or enemy:FindFirstChild("Engine") then
                 local healthObj = enemy:FindFirstChild("Health")
                 local isAlive = not healthObj or (healthObj:IsA("ValueBase") and healthObj.Value > 0) or (healthObj:IsA("Humanoid") and healthObj.Health > 0)
@@ -389,11 +390,11 @@ local function ExecuteEncryptedGun()
 
     local tool = character:FindFirstChildOfClass("Tool")
     if not tool or tool:GetAttribute("WeaponType") ~= "Gun" then return end
+    if string.find(string.lower(tool.Name), "skull guitar", 1, true) then return end
 
     local targetPos, targetPart = GetGunTarget()
     if not targetPos or not targetPart then return end
 
-    -- Gửi trực tiếp qua RE/ShootGunEvent 3 lần
     for i = 1, 3 do
         local shootGunEvent = Net and Net:FindFirstChild("RE/ShootGunEvent")
         if shootGunEvent then
@@ -407,4 +408,146 @@ task.spawn(function()
         pcall(ExecuteEncryptedGun)
         task.wait(0.00)
     end
+end)
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+
+-- Cấu hình
+local MAX_DISTANCE = 350
+local COOLDOWN = 0.2 -- Tốc độ gửi (0.2 giây / lần)
+
+-- Danh sách tên các mục tiêu đặc biệt (quái biển, tàu thuyền, crew)
+local targetNames = {
+	"Shark",
+	"Terrorshark",
+	"Piranha",
+	"Fish Crew Member",
+	"Haunted Crew Member",
+	"FishBoat",
+	"PirateBrigade",
+	"PirateGrandBrigade"
+}
+
+-- Kiểm tra xem có đang cầm Skull Guitar / Soul Guitar không
+local function isHoldingSkullGuitar()
+	local character = LocalPlayer.Character
+	if not character then return false end
+	
+	local tool = character:FindFirstChildOfClass("Tool")
+	if tool and (tool.Name == "Skull Guitar" or tool.Name == "Soul Guitar") then
+		return true
+	end
+	return false
+end
+
+-- Tìm vị trí mục tiêu (Ưu tiên quái đặc biệt/thuyền, sau đó đến quái thường hoặc người chơi gần nhất trong 300 studs)
+local function getTargetPosition()
+	local character = LocalPlayer.Character
+	if not character or not character:FindFirstChild("HumanoidRootPart") then return nil end
+	local myPos = character.HumanoidRootPart.Position
+
+	-- 1. Quét trong workspace.Enemies (Quái thường, quái biển nhỏ, tàu thuyền)
+	local enemiesFolder = Workspace:FindFirstChild("Enemies")
+	if enemiesFolder then
+		for _, enemy in ipairs(enemiesFolder:GetChildren()) do
+			if table.find(targetNames, enemy.Name) then
+				-- Nếu là tàu thuyền (có VehicleSeat và Engine)
+				if enemy:FindFirstChild("VehicleSeat") and enemy:FindFirstChild("Engine") then
+					local healthVal = enemy:FindFirstChild("Health")
+					if healthVal and healthVal.Value > 0 then
+						return enemy.Engine.Position
+					end
+				else
+					-- Nếu là quái sống bình thường
+					local hrp = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("RootPart") or enemy:FindFirstChild("Head")
+					local humanoid = enemy:FindFirstChildOfClass("Humanoid")
+					if hrp and humanoid and humanoid.Health > 0 then
+						return hrp.Position
+					end
+				end
+			end
+		end
+	end
+
+	-- 2. Quét trong workspace.SeaBeasts (Sea Beast hoặc Leviathan)
+	local seaBeastsFolder = Workspace:FindFirstChild("SeaBeasts")
+	if seaBeastsFolder then
+		for _, sb in ipairs(seaBeastsFolder:GetChildren()) do
+			-- Kiểm tra Sea Beast
+			local hrp = sb:FindFirstChild("HumanoidRootPart")
+			local healthVal = sb:FindFirstChild("Health")
+			if hrp and healthVal and healthVal.Value > 0 then
+				return hrp.Position
+			end
+			
+			-- Kiểm tra Leviathan Segment
+			local segment = sb:FindFirstChild("Leviathan Segment")
+			if segment and healthVal and healthVal.Value > 0 then
+				return segment.Position
+			end
+		end
+	end
+
+	-- 3. Nếu không có mấy con đặc biệt trên, tìm người chơi hoặc quái gần nhất trong phạm vi 300 studs
+	local closestPos = nil
+	local shortestDist = MAX_DISTANCE
+
+	-- Quét người chơi khác
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			local hrp = player.Character.HumanoidRootPart
+			local dist = (hrp.Position - myPos).Magnitude
+			if dist < shortestDist then
+				shortestDist = dist
+				closestPos = hrp.Position
+			end
+		end
+	end
+
+	-- Quét quái thường khác trong Enemies
+	if enemiesFolder then
+		for _, enemy in ipairs(enemiesFolder:GetChildren()) do
+			local hrp = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("RootPart") or enemy:FindFirstChild("Head")
+			local humanoid = enemy:FindFirstChildOfClass("Humanoid")
+			
+			if hrp and humanoid and humanoid.Health > 0 then
+				local dist = (hrp.Position - myPos).Magnitude
+				if dist < shortestDist then
+					shortestDist = dist
+					closestPos = hrp.Position
+				end
+			end
+		end
+	end
+
+	return closestPos
+end
+
+-- Vòng lặp chạy ngầm liên tục với tốc độ 0.2s
+task.spawn(function()
+	while true do
+		if isHoldingSkullGuitar() then
+			local targetPos = getTargetPosition()
+			
+			if targetPos then
+				local args = {
+					"TAP",
+					vector.create(targetPos.X, targetPos.Y, targetPos.Z)
+				}
+				
+				-- Gọi remote gốc của game
+				local character = LocalPlayer.Character
+				if character and character:FindFirstChild("Humanoid") then
+					local remote = character.Humanoid:WaitForChild("")
+					if remote then
+						remote:InvokeServer(unpack(args))
+					end
+				end
+			end
+		end
+		
+		task.wait(COOLDOWN)
+	end
 end)
