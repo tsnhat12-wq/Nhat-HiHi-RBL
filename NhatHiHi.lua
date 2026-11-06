@@ -415,7 +415,7 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
 -- Cấu hình
-local MAX_DISTANCE = 350
+local MAX_DISTANCE = 300
 local COOLDOWN = 0.2 -- Tốc độ gửi (0.2 giây / lần)
 
 -- Danh sách tên các mục tiêu đặc biệt (quái biển, tàu thuyền, crew)
@@ -442,7 +442,7 @@ local function isHoldingSkullGuitar()
 	return false
 end
 
--- Tìm vị trí mục tiêu (Ưu tiên quái đặc biệt/thuyền, sau đó đến quái thường hoặc người chơi gần nhất trong 300 studs)
+-- Tìm vị trí mục tiêu
 local function getTargetPosition()
 	local character = LocalPlayer.Character
 	if not character or not character:FindFirstChild("HumanoidRootPart") then return nil end
@@ -453,14 +453,12 @@ local function getTargetPosition()
 	if enemiesFolder then
 		for _, enemy in ipairs(enemiesFolder:GetChildren()) do
 			if table.find(targetNames, enemy.Name) then
-				-- Nếu là tàu thuyền (có VehicleSeat và Engine)
 				if enemy:FindFirstChild("VehicleSeat") and enemy:FindFirstChild("Engine") then
 					local healthVal = enemy:FindFirstChild("Health")
 					if healthVal and healthVal.Value > 0 then
 						return enemy.Engine.Position
 					end
 				else
-					-- Nếu là quái sống bình thường
 					local hrp = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("RootPart") or enemy:FindFirstChild("Head")
 					local humanoid = enemy:FindFirstChildOfClass("Humanoid")
 					if hrp and humanoid and humanoid.Health > 0 then
@@ -475,14 +473,12 @@ local function getTargetPosition()
 	local seaBeastsFolder = Workspace:FindFirstChild("SeaBeasts")
 	if seaBeastsFolder then
 		for _, sb in ipairs(seaBeastsFolder:GetChildren()) do
-			-- Kiểm tra Sea Beast
 			local hrp = sb:FindFirstChild("HumanoidRootPart")
 			local healthVal = sb:FindFirstChild("Health")
 			if hrp and healthVal and healthVal.Value > 0 then
 				return hrp.Position
 			end
 			
-			-- Kiểm tra Leviathan Segment
 			local segment = sb:FindFirstChild("Leviathan Segment")
 			if segment and healthVal and healthVal.Value > 0 then
 				return segment.Position
@@ -490,7 +486,7 @@ local function getTargetPosition()
 		end
 	end
 
-	-- 3. Nếu không có mấy con đặc biệt trên, tìm người chơi hoặc quái gần nhất trong phạm vi 300 studs
+	-- 3. Quét người chơi hoặc quái thường gần nhất trong phạm vi 300 studs
 	local closestPos = nil
 	local shortestDist = MAX_DISTANCE
 
@@ -537,10 +533,10 @@ task.spawn(function()
 					vector.create(targetPos.X, targetPos.Y, targetPos.Z)
 				}
 				
-				-- Gọi remote gốc của game
+				-- Dùng FindFirstChild thay vì WaitForChild để tránh bị kẹt khi đổi vũ khí
 				local character = LocalPlayer.Character
 				if character and character:FindFirstChild("Humanoid") then
-					local remote = character.Humanoid:WaitForChild("")
+					local remote = character.Humanoid:FindFirstChild("")
 					if remote then
 						remote:InvokeServer(unpack(args))
 					end
