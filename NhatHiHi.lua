@@ -415,7 +415,7 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
 -- Cấu hình
-local MAX_DISTANCE = 300
+local MAX_DISTANCE = 450
 local COOLDOWN = 0.2 -- Tốc độ gửi (0.2 giây / lần)
 
 -- Danh sách tên các mục tiêu đặc biệt (quái biển, tàu thuyền, crew)
@@ -526,12 +526,8 @@ task.spawn(function()
 	while true do
 		if isHoldingSkullGuitar() then
 			local targetPos = getTargetPosition()
-			
 			if targetPos then
-				local args = {
-					"TAP",
-					vector.create(targetPos.X, targetPos.Y, targetPos.Z)
-				}
+				local args = {"TAP",vector.create(targetPos.X, targetPos.Y, targetPos.Z)}
 				
 				-- Dùng FindFirstChild thay vì WaitForChild để tránh bị kẹt khi đổi vũ khí
 				local character = LocalPlayer.Character
