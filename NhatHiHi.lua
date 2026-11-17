@@ -1,4 +1,5 @@
-Local Players = game:GetService("Players")
+
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local StarterGui = game:GetService("StarterGui")
@@ -198,11 +199,10 @@ task.spawn(function()
     end
 end)
 
--- Gun Attack (Dùng task.wait với khoảng nghỉ cố định cho súng)
 task.spawn(function()
     while true do
         pcall(ExecuteEncryptedGun)
-        task.wait(0.001)
+        task.wait(0.005)
     end
 end)
 
@@ -225,7 +225,7 @@ local function GetGunTarget()
 
     local closestPart = nil
     local closestPos = nil
-    local minDist = 500
+    local minDist = 400
 
     if Enemies then
         for _, enemy in pairs(Enemies:GetChildren()) do
@@ -304,7 +304,7 @@ end
 task.spawn(function()
     while true do
         pcall(ExecuteEncryptedGun)
-        task.wait(0.001)
+        task.wait(0.005)
     end
 end)
 
@@ -327,7 +327,7 @@ local function GetGunTarget()
 
     local closestPart = nil
     local closestPos = nil
-    local minDist = 500
+    local minDist = 400
 
     if Enemies then
         for _, enemy in pairs(Enemies:GetChildren()) do
@@ -406,6 +406,12 @@ end
 task.spawn(function()
     while true do
         pcall(ExecuteEncryptedGun)
-        task.wait(0.001)
+        task.wait(0.005)
     end
 end)
+
+local Rocks=workspace:FindFirstChild("Rocks")
+if Rocks then
+    Rocks:Destroy()
+    print("Đã xoá Workspace.Rocks")
+end
