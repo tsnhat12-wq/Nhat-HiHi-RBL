@@ -52,7 +52,7 @@ local function GetGunTarget()
 
     local closestPart = nil
     local closestPos = nil
-    local minDist = 500
+    local minDist = 400
 
     if Enemies then
         for _, enemy in pairs(Enemies:GetChildren()) do
@@ -191,32 +191,221 @@ local function ExecuteEncryptedGun()
     end
 end
 
-local RunService = game:GetService("RunService")
-
 task.spawn(function()
-    local lastRun = 0
-    local interval = 0.01
-
     while true do
-        local now = os.clock()
-        if now - lastRun >= interval then
-            lastRun = now
-            pcall(ExecuteFastAttack)
-        end
-        RunService.Heartbeat:Wait() 
+        pcall(ExecuteFastAttack)
+        task.wait(0.005)
     end
 end)
 
+-- Gun Attack (Dùng task.wait với khoảng nghỉ cố định cho súng)
 task.spawn(function()
-    local lastRun = 0
-    local interval = 0.001
-
     while true do
-        local now = os.clock()
-        if now - lastRun >= interval then
-            lastRun = now
-            pcall(ExecuteEncryptedGun)
+        pcall(ExecuteEncryptedGun)
+        task.wait(0.001)
+    end
+end)
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
+
+local LocalPlayer = Players.LocalPlayer
+
+local Modules = ReplicatedStorage:WaitForChild("Modules", 5)
+local Net = Modules and Modules:WaitForChild("Net", 5)
+local Enemies = Workspace:WaitForChild("Enemies", 5)
+local Characters = Workspace:WaitForChild("Characters", 5)
+
+local function GetGunTarget()
+    local myChar = LocalPlayer.Character
+    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return nil, nil end
+
+    local closestPart = nil
+    local closestPos = nil
+    local minDist = 500
+
+    if Enemies then
+        for _, enemy in pairs(Enemies:GetChildren()) do
+
+            if enemy:FindFirstChild("VehicleSeat") or enemy:FindFirstChild("Engine") then
+                local healthObj = enemy:FindFirstChild("Health")
+                local isAlive = not healthObj or (healthObj:IsA("ValueBase") and healthObj.Value > 0) or (healthObj:IsA("Humanoid") and healthObj.Health > 0)
+                
+                if isAlive then
+                    local targetPart = enemy:FindFirstChild("Engine") or enemy:FindFirstChild("VehicleSeat") or enemy:FindFirstChildWhichIsA("BasePart")
+                    if targetPart then
+                        local dist = (targetPart.Position - myHRP.Position).Magnitude
+                        if dist < minDist then
+                            minDist = dist
+                            closestPart = targetPart
+                            closestPos = targetPart.Position
+                        end
+                    end
+                end
+            end
+
+            local hum = enemy:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                local targetPart = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Head") or enemy:FindFirstChildWhichIsA("BasePart")
+                if targetPart then
+                    local dist = (targetPart.Position - myHRP.Position).Magnitude
+                    if dist < minDist then
+                        minDist = dist
+                        closestPart = targetPart
+                        closestPos = targetPart.Position
+                    end
+                end
+            end
         end
-        RunService.Heartbeat:Wait()
+    end
+
+    local seaBeastsFolder = Workspace:FindFirstChild("SeaBeasts")
+    if seaBeastsFolder then
+        for _, b in pairs(seaBeastsFolder:GetChildren()) do
+            local hrp = b:FindFirstChild("HumanoidRootPart")
+            local healthObj = b:FindFirstChild("Health")
+            if hrp and healthObj and healthObj.Value > 0 then
+                local targetPart = b:FindFirstChild("Leviathan Segment") or hrp
+                local dist = (targetPart.Position - myHRP.Position).Magnitude
+                if dist < minDist then
+                    minDist = dist
+                    closestPart = targetPart
+                    closestPos = targetPart.Position
+                end
+            end
+        end
+    end
+
+    return closestPos, closestPart
+end
+
+local function ExecuteEncryptedGun()
+    local character = LocalPlayer.Character
+    if not character then return end
+
+    local tool = character:FindFirstChildOfClass("Tool")
+    if not tool or tool:GetAttribute("WeaponType") ~= "Gun" then return end
+    if string.find(string.lower(tool.Name), "skull guitar", 1, true) then return end
+
+    local targetPos, targetPart = GetGunTarget()
+    if not targetPos or not targetPart then return end
+
+    for i = 1, 3 do
+        local shootGunEvent = Net and Net:FindFirstChild("RE/ShootGunEvent")
+        if shootGunEvent then
+            shootGunEvent:FireServer(targetPos, { targetPart })
+        end
+    end
+end
+
+task.spawn(function()
+    while true do
+        pcall(ExecuteEncryptedGun)
+        task.wait(0.001)
+    end
+end)
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
+
+local LocalPlayer = Players.LocalPlayer
+
+local Modules = ReplicatedStorage:WaitForChild("Modules", 5)
+local Net = Modules and Modules:WaitForChild("Net", 5)
+local Enemies = Workspace:WaitForChild("Enemies", 5)
+local Characters = Workspace:WaitForChild("Characters", 5)
+
+local function GetGunTarget()
+    local myChar = LocalPlayer.Character
+    local myHRP = myChar and myChar:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return nil, nil end
+
+    local closestPart = nil
+    local closestPos = nil
+    local minDist = 500
+
+    if Enemies then
+        for _, enemy in pairs(Enemies:GetChildren()) do
+
+            if enemy:FindFirstChild("VehicleSeat") or enemy:FindFirstChild("Engine") then
+                local healthObj = enemy:FindFirstChild("Health")
+                local isAlive = not healthObj or (healthObj:IsA("ValueBase") and healthObj.Value > 0) or (healthObj:IsA("Humanoid") and healthObj.Health > 0)
+                
+                if isAlive then
+                    local targetPart = enemy:FindFirstChild("Engine") or enemy:FindFirstChild("VehicleSeat") or enemy:FindFirstChildWhichIsA("BasePart")
+                    if targetPart then
+                        local dist = (targetPart.Position - myHRP.Position).Magnitude
+                        if dist < minDist then
+                            minDist = dist
+                            closestPart = targetPart
+                            closestPos = targetPart.Position
+                        end
+                    end
+                end
+            end
+
+            local hum = enemy:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                local targetPart = enemy:FindFirstChild("HumanoidRootPart") or enemy:FindFirstChild("Head") or enemy:FindFirstChildWhichIsA("BasePart")
+                if targetPart then
+                    local dist = (targetPart.Position - myHRP.Position).Magnitude
+                    if dist < minDist then
+                        minDist = dist
+                        closestPart = targetPart
+                        closestPos = targetPart.Position
+                    end
+                end
+            end
+        end
+    end
+
+    local seaBeastsFolder = Workspace:FindFirstChild("SeaBeasts")
+    if seaBeastsFolder then
+        for _, b in pairs(seaBeastsFolder:GetChildren()) do
+            local hrp = b:FindFirstChild("HumanoidRootPart")
+            local healthObj = b:FindFirstChild("Health")
+            if hrp and healthObj and healthObj.Value > 0 then
+                local targetPart = b:FindFirstChild("Leviathan Segment") or hrp
+                local dist = (targetPart.Position - myHRP.Position).Magnitude
+                if dist < minDist then
+                    minDist = dist
+                    closestPart = targetPart
+                    closestPos = targetPart.Position
+                end
+            end
+        end
+    end
+
+    return closestPos, closestPart
+end
+
+local function ExecuteEncryptedGun()
+    local character = LocalPlayer.Character
+    if not character then return end
+
+    local tool = character:FindFirstChildOfClass("Tool")
+    if not tool or tool:GetAttribute("WeaponType") ~= "Gun" then return end
+    if string.find(string.lower(tool.Name), "skull guitar", 1, true) then return end
+
+    local targetPos, targetPart = GetGunTarget()
+    if not targetPos or not targetPart then return end
+
+    for i = 1, 3 do
+        local shootGunEvent = Net and Net:FindFirstChild("RE/ShootGunEvent")
+        if shootGunEvent then
+            shootGunEvent:FireServer(targetPos, { targetPart })
+        end
+    end
+end
+
+task.spawn(function()
+    while true do
+        pcall(ExecuteEncryptedGun)
+        task.wait(0.001)
     end
 end)
